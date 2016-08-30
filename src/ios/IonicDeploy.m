@@ -15,6 +15,7 @@
 @property NSString *appId;
 @property NSString *channel_tag;
 @property NSString *domain;
+@property(nonatomic, assign) BOOL downloadFailed;
 
 @property NSDictionary *last_update;
 @property Boolean ignore_deploy;
@@ -400,7 +401,7 @@ typedef struct JsonHttpResponse {
             self.currentUUID = uuid;
 
             NSLog(@"Redirecting to: %@", components.URL.absoluteString);
-            [self.webView loadRequest: [NSURLRequest requestWithURL:components.URL] ];
+            [(UIWebView *)self.webView loadRequest: [NSURLRequest requestWithURL:components.URL] ];
         }
         });
     }
@@ -584,6 +585,9 @@ typedef struct JsonHttpResponse {
 
 - (void)didFinishLoadingAllForManager:(DownloadManager *)downloadManager
 {
+    if (self.downloadFailed)
+        return;
+    
     // Save the upstream_uuid (what we just downloaded) to the uuid preference
     NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
     NSString *uuid = [[NSUserDefaults standardUserDefaults] objectForKey:@"uuid"];
@@ -600,6 +604,16 @@ typedef struct JsonHttpResponse {
     CDVPluginResult* pluginResult = nil;
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"true"];
 
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+}
+
+- (void)downloadManager:(DownloadManager *)downloadManager downloadDidFail:(Download *)download {
+    NSLog(@"Download Failed...");
+    
+    self.downloadFailed = YES;
+    CDVPluginResult* pluginResult = nil;
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"false"];
+    
     [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
 }
 
