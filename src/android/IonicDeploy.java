@@ -674,6 +674,13 @@ public class IonicDeploy extends CordovaPlugin {
                 URL url = new URL(sUrl[0]);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.connect();
+                connection.setInstanceFollowRedirects(true);
+
+                while (connection.getResponseCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
+                    url = new URL(connection.getHeaderField("Location"));
+                    connection = (HttpURLConnection) url.openConnection();
+                    connection.connect();
+                }
 
                 // expect HTTP 200 OK, so we don't mistakenly save error report
                 // instead of the file
